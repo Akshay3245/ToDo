@@ -12,6 +12,7 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
     const todo = new Todo({
         text: req.body.text,
+        dueDate: req.body.dueDate,
     });
     await todo.save();
     res.status(201).json(todo);
