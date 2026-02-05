@@ -1,19 +1,22 @@
 let tasks = [];
 
-//FETCH ALL TASKS
+// FETCH ALL TASKS
 async function fetchTasks() {
     const res = await fetch("http://localhost:3000/todos");
     tasks = await res.json();
     renderTasks();
 }
 
-//ADD TASK
+// ADD TASK (with due date)
 async function addTask() {
     const input = document.getElementById("taskInput");
-    const taskText = input.value.trim();
+    const dateInput = document.getElementById("dateInput");
 
-    if (taskText === "") {
-        alert("Please enter a task");
+    const taskText = input.value.trim();
+    const dueDate = dateInput.value;
+
+    if (taskText === "" || dueDate === "") {
+        alert("Please enter task and due date");
         return;
     }
 
@@ -22,31 +25,48 @@ async function addTask() {
         headers: {
             "Content-Type": "application/json",
         },
-        body: JSON.stringify({ text: taskText }),
+        body: JSON.stringify({
+            text: taskText,
+            dueDate: dueDate,
+        }),
     });
 
     input.value = "";
+    dateInput.value = "";
     fetchTasks();
 }
 
-//RENDER TASKS
+// RENDER TASKS (text + due date)
 function renderTasks() {
     const list = document.getElementById("taskList");
     list.innerHTML = "";
 
     tasks.forEach((task) => {
         const li = document.createElement("li");
-        li.textContent = task.text;
+
+        let dueDateText = "No due date";
+        if (task.dueDate) {
+            dueDateText = new Date(task.dueDate).toLocaleDateString();
+        }
+
+        li.innerHTML = `
+            <span>
+                ${task.text}
+                <br />
+                <small>Due: ${dueDateText}</small>
+            </span>
+        `;
 
         if (task.completed) {
             li.classList.add("completed");
         }
 
-        // toggle complete
+        // Toggle complete
         li.addEventListener("click", () => {
             toggleTask(task._id);
         });
 
+        // Delete button
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "delete-btn";
         deleteBtn.innerHTML = `<i class="fa-solid fa-trash"></i>`;
@@ -61,7 +81,7 @@ function renderTasks() {
     });
 }
 
-//TOGGLE COMPLETE
+// TOGGLE COMPLETE
 async function toggleTask(id) {
     await fetch(`http://localhost:3000/todos/${id}`, {
         method: "PUT",
@@ -69,18 +89,21 @@ async function toggleTask(id) {
     fetchTasks();
 }
 
-//DELETE TASK
+// DELETE TASK
 async function deleteTask(id) {
     await fetch(`http://localhost:3000/todos/${id}`, {
         method: "DELETE",
     });
     fetchTasks();
 }
-const input = document.getElementById("taskInput");
 
+// ENTER KEY SUPPORT
+const input = document.getElementById("taskInput");
 input.addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
         addTask();
     }
 });
+
+// INITIAL LOAD
 fetchTasks();
