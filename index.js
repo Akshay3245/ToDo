@@ -1,7 +1,14 @@
-let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+let tasks = [];
 
-// ADD TASK
-function addTask() {
+//FETCH ALL TASKS
+async function fetchTasks() {
+    const res = await fetch("http://localhost:3000/todos");
+    tasks = await res.json();
+    renderTasks();
+}
+
+//ADD TASK
+async function addTask() {
     const input = document.getElementById("taskInput");
     const taskText = input.value.trim();
 
@@ -10,34 +17,34 @@ function addTask() {
         return;
     }
 
-    tasks.push({
-        text: taskText,
-        completed: false,
+    await fetch("http://localhost:3000/todos", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: taskText }),
     });
 
     input.value = "";
-
-    saveTasks();
-    renderTasks();
+    fetchTasks();
 }
 
-// RENDER TASKS
+//RENDER TASKS
 function renderTasks() {
     const list = document.getElementById("taskList");
     list.innerHTML = "";
 
-    tasks.forEach((task, index) => {
+    tasks.forEach((task) => {
         const li = document.createElement("li");
         li.textContent = task.text;
 
-        // completed style
         if (task.completed) {
             li.classList.add("completed");
         }
 
-        // click to toggle complete
+        // toggle complete
         li.addEventListener("click", () => {
-            toggleTask(index);
+            toggleTask(task._id);
         });
 
         const deleteBtn = document.createElement("button");
@@ -45,8 +52,8 @@ function renderTasks() {
         deleteBtn.innerHTML = `<i class="fa-solid fa-trash"></i>`;
 
         deleteBtn.onclick = (e) => {
-            e.stopPropagation(); // stop toggle when deleting
-            deleteTask(index);
+            e.stopPropagation();
+            deleteTask(task._id);
         };
 
         li.appendChild(deleteBtn);
@@ -54,26 +61,21 @@ function renderTasks() {
     });
 }
 
-// TOGGLE COMPLETE
-function toggleTask(index) {
-    tasks[index].completed = !tasks[index].completed;
-    saveTasks();
-    renderTasks();
+//TOGGLE COMPLETE
+async function toggleTask(id) {
+    await fetch(`http://localhost:3000/todos/${id}`, {
+        method: "PUT",
+    });
+    fetchTasks();
 }
 
-// DELETE
-function deleteTask(index) {
-    tasks.splice(index, 1);
-    saveTasks();
-    renderTasks();
+//DELETE TASK
+async function deleteTask(id) {
+    await fetch(`http://localhost:3000/todos/${id}`, {
+        method: "DELETE",
+    });
+    fetchTasks();
 }
-
-// SAVE
-function saveTasks() {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-}
-
-// ENTER KEY SUPPORT
 const input = document.getElementById("taskInput");
 
 input.addEventListener("keydown", function (e) {
@@ -81,6 +83,4 @@ input.addEventListener("keydown", function (e) {
         addTask();
     }
 });
-
-// INITIAL LOAD
-renderTasks();
+fetchTasks();
